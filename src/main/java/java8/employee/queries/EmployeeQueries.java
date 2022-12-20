@@ -51,7 +51,7 @@ public class EmployeeQueries {
         avgAndTotalSalaryAndStats(employees);
 
         //14. Separate the employees who are younger or equal to 25 years from those employees who are older than 25 years.
-        partitionYoundAndOld(employees);
+        partitionYoungAndOld(employees);
 
         //15. Who is the oldest employee in the organization? What is his age and which department he belongs to?
         oldestEmployee(employees);
@@ -61,14 +61,14 @@ public class EmployeeQueries {
         System.out.println("15----Who is the oldest employee in the organization? What is his age and which department he belongs to?");
         //        employees.stream().mapToInt(Employee::age).max().ifPresent(); // Doesn't work because we need employee object
         Optional<Employee> oldestEmp = employees.stream().max(Comparator.comparing(Employee::age));
-        oldestEmp.ifPresent(employee -> {
+        oldestEmp.ifPresent( employee -> {
             System.out.println("name:" + employee.name());
             System.out.println("age:" + employee.age());
             System.out.println("dept:" + employee.department());
         });
     }
 
-    private static void partitionYoundAndOld(List<Employee> employees) {
+    private static void partitionYoungAndOld(List<Employee> employees) {
         System.out.println("14----Separate the employees who are younger or equal to 25 years from those employees who are older than 25 years.");
         Map<Boolean, List<Employee>> youngOldPartitions = employees.stream()
                 .collect(Collectors.partitioningBy(employee -> employee.age() < 25));
