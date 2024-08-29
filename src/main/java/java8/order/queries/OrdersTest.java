@@ -6,10 +6,10 @@ import java8.order.queries.domain.Product;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OrdersTest {
@@ -48,7 +48,7 @@ public class OrdersTest {
                 .filter(order -> order.getCustomer().getTier() == 2)
                 .filter(order -> order.getOrderDate().isAfter(LocalDate.of(2021, 02, 1)))
                 .filter(order -> order.getOrderDate().isBefore(LocalDate.of(2021, 04, 1)))
-                .flatMap(order -> order.getProducts().stream())// Stream.of(list1), Stream.of(list2) -> Stream.of(list1,list2)
+                .flatMap(order -> order.getProducts().stream())
                 .distinct()
                 .forEach(System.out::println);
 
@@ -87,19 +87,20 @@ public class OrdersTest {
                 .filter(order -> order.getOrderDate().isAfter(LocalDate.of(2021, 01, 31)))
                 .filter(order -> order.getOrderDate().isBefore(LocalDate.of(2021, 03, 01)))
                 .flatMap(order -> order.getProducts().stream())
-                .mapToDouble(product -> product.getPrice())
+                .mapToDouble(Product::getPrice)
                 .sum()); // Note: sum() returns double
 
         // Exercise 9 — Calculate order average payment placed on 14-Mar-2021
         System.out.println("\n\nExercise 9 — Calculate order average payment placed on 14-Mar-2021");
         DateTimeFormatter df = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
-        ;
+        LocalDate targetDate = LocalDate.parse("14-Mar-2021", df);
+
         System.out.println(orders.stream()
-                .filter(order -> order.getOrderDate().isAfter(LocalDate.parse("14-Mar-2021", df)))
+                .filter(order -> order.getOrderDate().isEqual(targetDate)) // Include orders placed on 14-Mar-2021
                 .flatMap(order -> order.getProducts().stream())
                 .mapToDouble(Product::getPrice)
-                .average()// Note: average() returns optionalDouble
-                .getAsDouble()); // Note: can use DecimalFormatter to convert to 0.00 format
+                .average()
+                .orElse(0.0)); // Provide a default value if no average is found
 
 
         // Exercise 10 — Obtain a collection of statistic figures (i.e. sum, average, max, min, count) for all products of category “Books”
@@ -121,7 +122,7 @@ public class OrdersTest {
         // Exercise 11 — Obtain a data map with order id and order’s product count
         System.out.println("\n\nExercise 11 — Obtain a data map with order id and order’s product count");
         orders.stream()
-                .collect(Collectors.toMap(order -> order.getId(), order -> order.getProducts().size()))
+                .collect(Collectors.toMap(Order::getId, order -> order.getProducts().size()))
                 .forEach((id, count) -> System.out.println(id + ":" + count));
 
         // Exercise 12 — Produce a data map with order records grouped by customer
@@ -133,28 +134,47 @@ public class OrdersTest {
         // Exercise 13 — Produce a data map with order record and product total sum
         System.out.println("\n\nExercise 13 — Produce a data map with order record and product total sum");
         orders.stream()
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.summingDouble(order -> order.getProducts().stream().mapToDouble(Product::getPrice).sum())))
-                .forEach((orderId, sum) -> System.out.println(orderId + ":" + sum));
-        // ~ Better way
-        orders.stream()
-                .collect(Collectors.toMap(Function.identity(), order -> order.getProducts().stream().mapToDouble(Product::getPrice).sum()))
+                .collect(Collectors.toMap(order -> order, order -> order.getProducts().stream().mapToDouble(Product::getPrice).sum()))
                 .forEach((order, sum) -> System.out.println(order + ": " + sum));
+
+        //just to know how Collectors.joining() works
+        List<String> s = Arrays.asList("vishal", "jain", "cn");
+        String s1 = s.stream().collect(Collectors.joining("+", "{", "}"));
+        System.out.println(s1);
 
         //Exercise 14 — Obtain a data map with list of product name by category ; COLLECTORS.MAPPING usage <-----------------------
         System.out.println("\n\nExercise 14 — Obtain a data map with list of product name by category");
         products.stream()
                 .collect(Collectors.groupingBy(Product::getCategory, Collectors.mapping(Product::getName, Collectors.toList())))
-                .forEach((category, names) -> System.out.println(category + ":" + names.stream().collect(Collectors.joining(","))));
+                .forEach((category, names) -> System.out.println(category + ":" + names.stream().collect(Collectors.joining(",", "{", "}"))));
 
-        // Exercise 15 — Get the most expensive product by category
+        // BOTH ARE SAME Exercise 15a — Get the most expensive product by category
         System.out.println("\n\nExercise 15 — Get the most expensive product by category");
         products.stream()
                 .collect(Collectors.groupingBy(Product::getCategory, Collectors.maxBy(Comparator.comparing(Product::getPrice))))
                 .forEach((category, product) -> System.out.println(category + ":" + product.orElse(null)));
 
+        // Exercise 15b — Get the most expensive product by category
+        System.out.println("\n\nExercise 15 — Get the most expensive product by category");
+        products.stream()
+                .collect(Collectors.groupingBy(Product::getCategory))
+                .forEach((category, productList) -> {
+                    productList.stream()
+                            .max(Comparator.comparing(Product::getPrice)) // Find the most expensive product
+                            .ifPresent(product -> System.out.println(category + ": " + product));
+                });
+
+
         // Exercise 16 — Get the most expensive product price in each category
-        System.out.println("\n\nExercise 16 — Get the most expensive product by category");
-        // TODO:
+        System.out.println("\n\nExercise 16 — Get the most expensive product price in each category");
+        products.stream()
+                .collect(Collectors.groupingBy(Product::getCategory)) // Group products by category
+                .forEach((category, productList) -> {
+                    productList.stream()
+                            .max(Comparator.comparing(Product::getPrice)) // Find the most expensive product
+                            .ifPresent(product -> System.out.println(category + ": " + product.getPrice()));
+                });
+
 
     }
 
@@ -206,8 +226,8 @@ public class OrdersTest {
 
         // Order
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        Order order1 = new Order(1L, LocalDate.parse("2021-02-28", formatter), LocalDate.parse("2021-03-08", formatter), "NEW", customer5, null);
-        Order order2 = new Order(2L, LocalDate.parse("2021-02-28", formatter), LocalDate.parse("2021-03-05", formatter), "NEW", customer3, null);
+        Order order1 = new Order(1L, LocalDate.parse("2021-03-14", formatter), LocalDate.parse("2021-03-08", formatter), "NEW", customer5, null);
+        Order order2 = new Order(2L, LocalDate.parse("2021-03-14", formatter), LocalDate.parse("2021-03-05", formatter), "NEW", customer3, null);
         Order order3 = new Order(3L, LocalDate.parse("2021-04-10", formatter), LocalDate.parse("2021-04-18", formatter), "DELIVERED", customer5, null);
         Order order4 = new Order(4L, LocalDate.parse("2021-03-22", formatter), LocalDate.parse("2021-03-27", formatter), "PENDING", customer3, null);
         Order order5 = new Order(5L, LocalDate.parse("2021-03-04", formatter), LocalDate.parse("2021-03-12", formatter), "NEW", customer1, null);
