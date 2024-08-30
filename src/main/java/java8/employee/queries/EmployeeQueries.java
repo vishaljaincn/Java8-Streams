@@ -8,6 +8,12 @@ import static java.util.stream.Collectors.toSet;
 
 public class EmployeeQueries {
     public static void main(String[] args) {
+        Employee employee = new Employee(9, "vishal");
+        employee.meow();
+        System.out.println(Employee.address);
+        Employee.address="oooaaa";
+        System.out.println(Employee.address);
+
         List<Employee> employees = createEmployees();
 
         // 1. Male and Female employees
