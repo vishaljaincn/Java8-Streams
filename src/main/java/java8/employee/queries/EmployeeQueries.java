@@ -49,8 +49,11 @@ public class EmployeeQueries {
         // 13. What is the average salary and total salary of the whole organization?
         avgAndTotalSalaryAndStats(employees);
 
-        // 14. Separate the employees who are younger or equal to 25 years from those employees who are older than 25 years
+        // 14a. Separate the employees who are younger or equal to 25 years from those employees who are older than 25 years
         partitionYoungAndOld(employees);
+
+        // 14b. Separate the employees who are younger or equal to 25 years from those employees who are older than 25 years
+        partitionYoungAndOldCount(employees);
 
         // 15. Who is the oldest employee in the organization? What is his age, and which department does he belong to?
         oldestEmployee(employees);
@@ -141,9 +144,11 @@ public class EmployeeQueries {
         System.out.println("8----Youngest male employee in the Product Development department");
         employees.stream()
                 .filter(employee -> employee.department().equalsIgnoreCase("Product Development"))
+                .filter(employee -> employee.gender().equalsIgnoreCase("Male"))
                 .min(Comparator.comparing(Employee::age))
                 .ifPresentOrElse(System.out::println, () -> System.out.println("No youngest male employee found"));
     }
+
 
     // 9. Who has the most working experience in the organization?
     private static void mostWorkingExperience(List<Employee> employees) {
@@ -157,7 +162,7 @@ public class EmployeeQueries {
     private static void maleFemaleCountInSalesTeam(List<Employee> employees) {
         System.out.println("10----How many male and female employees are there in the Sales and Marketing team?");
         employees.stream()
-                .filter(employee -> "Sales And Marketing".equals(employee.department()))
+                .filter(employee -> (employee.department().equalsIgnoreCase("Sales And Marketing")))
                 .collect(Collectors.groupingBy(Employee::gender, Collectors.counting()))
                 .forEach((gender, count) -> System.out.println(gender + ":" + count));
     }
@@ -197,12 +202,36 @@ public class EmployeeQueries {
                 """, df.format(stats.getAverage()), df.format(stats.getMax()), df.format(stats.getMin()), df.format(stats.getSum()));
     }
 
-    // 14. Separate the employees who are younger or equal to 25 years from those employees who are older than 25 years
+    // 14a. Separate the employees who are younger or equal to 25 years from those employees who are older than 25 years
     private static void partitionYoungAndOld(List<Employee> employees) {
-        System.out.println("14----Separate the employees who are younger or equal to 25 years from those who are older");
+        System.out.println("14b----Separate the employees who are younger or equal to 25 years from those who are older");
+
+        // Partition employees by age (<= 25 and > 25)
         Map<Boolean, List<Employee>> partitionedByAge = employees.stream()
                 .collect(Collectors.partitioningBy(employee -> employee.age() > 25));
-        partitionedByAge.forEach((isOlder, employeeList) -> System.out.println(isOlder ? "Older than 25:" : "Younger than or equal to 25:" + employeeList));
+
+        // Employees older than 25
+        System.out.println("Employees older than 25:");
+        partitionedByAge.get(true).forEach(System.out::println);
+
+        // Employees younger than or equal to 25
+        System.out.println("Employees younger than or equal to 25:");
+        partitionedByAge.get(false).forEach(System.out::println);
+    }
+
+    // 14b.  How can we separate and count the number of employees who are older than 25 years and those who are younger than or equal to 25 years using Java Streams
+    private static void partitionYoungAndOldCount(List<Employee> employees) {
+        System.out.println("14a----Separate the employees who are younger or equal to 25 years from those who are older");
+
+        // Partition employees by age (<= 25 and > 25) and get counts
+        Map<Boolean, Long> countByAgeGroup = employees.stream()
+                .collect(Collectors.partitioningBy(employee -> employee.age() > 25, Collectors.counting()));
+
+        // Print the count of employees older than 25
+        System.out.println("Employees older than 25: " + countByAgeGroup.get(true));
+
+        // Print the count of employees younger than or equal to 25
+        System.out.println("Employees younger than or equal to 25: " + countByAgeGroup.get(false));
     }
 
     // 15. Who is the oldest employee in the organization? What is his age, and which department does he belong to?
