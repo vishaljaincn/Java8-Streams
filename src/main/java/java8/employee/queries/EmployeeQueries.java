@@ -11,7 +11,7 @@ public class EmployeeQueries {
         Employee employee = new Employee(9, "vishal");
         employee.meow();
         System.out.println(Employee.address);
-        Employee.address="oooaaa";
+        Employee.address = "oooaaa";
         System.out.println(Employee.address);
 
         List<Employee> employees = createEmployees();
